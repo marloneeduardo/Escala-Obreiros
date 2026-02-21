@@ -1,2 +1,2 @@
 # Escala-Obreiros
-Escala de obreiros da Sede
+Escala Obreiros - Sede

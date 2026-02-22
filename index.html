@@ -13,36 +13,295 @@
     <script type="text/babel">
         const { useState, useMemo, useEffect, useCallback, useRef, Component } = React;
 
-        // --- SEU SISTEMA COMEÇA AQUI ---
-        /* [CÓDIGO ADAPTADO DO SEU APP.JSX] */
-        
-        // (Aqui eu incluirei todo o seu código original de forma compacta para você colar)
-        // Por favor, confirme se você conseguiu nomear o arquivo para eu te mandar o bloco de código completo!
+        // Copiando as configurações do seu App.jsx
+        const FONT_STYLE = `
+          @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Lora:ital,wght@0,600;1,500&display=swap');
+          *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+          body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f1117; }
+          :root {
+            --navy: #0f1117; --navy2: #181c27; --navy3: #1e2336;
+            --gold: #c9922a; --gold2: #f0b84a; --gold3: #fcd97a;
+            --indigo: #4f46e5; --indigo2: #6366f1; --indigo3: #818cf8;
+            --green: #10b981; --red: #ef4444; --rose: #f43f5e;
+            --slate: #64748b; --slate2: #94a3b8; --slate3: #cbd5e1;
+            --card: #181c27; --border: rgba(255,255,255,0.08);
+            --text: #f1f5f9; --text2: #94a3b8; --text3: #64748b;
+          }
+          @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; font-family: Arial, sans-serif; }
+            .print-area { display: block !important; }
+          }
+          .print-area { display: none; }
+          @keyframes slideIn { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+          @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+          @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes scaleIn { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
+          input:focus, select:focus, textarea:focus { outline: none; border-color: var(--indigo2) !important; box-shadow: 0 0 0 3px rgba(99,102,241,0.2) !important; }
+          button:focus-visible { outline: 2px solid var(--gold2); outline-offset: 2px; }
+          ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--navy2); } ::-webkit-scrollbar-thumb { background: var(--navy3); border-radius: 3px; }
+          .hover-card:hover { transform: translateY(-1px); transition: transform .15s ease; }
+        `;
+
+        // Constantes e lógica do seu sistema
+        const CARGO_COLOR  = { CP:"#818cf8", DC:"#22d3ee", PB:"#f59e0b", EV:"#34d399" };
+        const CARGO_BG     = { CP:"rgba(99,102,241,.15)", DC:"rgba(6,182,212,.15)", PB:"rgba(245,158,11,.15)", EV:"rgba(52,211,153,.15)" };
+        const CARGO_LABELS = { CP:"Cooperador/a", DC:"Diácono/Diaconisa", PB:"Presbítero", EV:"Evangelista" };
+        const MESES_LABELS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+
+        const DW = [
+          { key:"dom", label:"Domingo", short:"Dom", type:"domingo",  dow:0, accent:"#60a5fa", pill:"#2563eb",  light:"rgba(37,99,235,.15)"  },
+          { key:"seg", label:"Segunda", short:"Seg", type:"segunda",  dow:1, accent:"#94a3b8", pill:"#64748b",  light:"rgba(100,116,139,.1)" },
+          { key:"ter", label:"Terça",   short:"Ter", type:"terca",    dow:2, accent:"#a78bfa", pill:"#7c3aed",  light:"rgba(124,58,237,.15)" },
+          { key:"qua", label:"Quarta",  short:"Qua", type:"quarta",   dow:3, accent:"#fb923c", pill:"#ea580c",  light:"rgba(234,88,12,.15)"  },
+          { key:"qui", label:"Quinta",  short:"Qui", type:"quinta",   dow:4, accent:"#34d399", pill:"#059669",  light:"rgba(5,150,105,.15)"  },
+          { key:"sex", label:"Sexta",   short:"Sex", type:"sexta",    dow:5, accent:"#f472b6", pill:"#db2777",  light:"rgba(219,39,119,.15)" },
+          { key:"sab", label:"Sábado",  short:"Sáb", type:"sabado",   dow:6, accent:"#fbbf24", pill:"#d97706",  light:"rgba(217,119,6,.15)"  },
+        ];
+        const dByType = t => DW.find(d => d.type === t) || DW[0];
+
+        const FM = [
+          { key:"coordenacao",  label:"Coordenação",     icon:"🎯", color:"#f87171", bg:"rgba(248,113,113,.1)"  },
+          { key:"recepcao",     label:"Recepção",         icon:"🤝", color:"#a78bfa", bg:"rgba(167,139,250,.1)", multi:true },
+          { key:"visitantesF",  label:"Visitantes ♀",    icon:"🚶‍♀️", color:"#f472b6", bg:"rgba(244,114,182,.1)" },
+          { key:"visitantesM",  label:"Visitantes ♂",    icon:"🚶", color:"#22d3ee", bg:"rgba(34,211,238,.1)"  },
+          { key:"banheiroF",    label:"Banheiro Fem.",   icon:"🚻", color:"#fb7185", bg:"rgba(251,113,133,.1)" },
+          { key:"banheiroM",    label:"Banheiro Masc.",  icon:"🚹", color:"#38bdf8", bg:"rgba(56,189,248,.1)"  },
+          { key:"frenteIgreja", label:"Frente da Igreja", icon:"🏛️", color:"#818cf8", bg:"rgba(129,140,248,.1)", multi:true },
+          { key:"pulpito",      label:"Púlpito",          icon:"🎤", color:"#fbbf24", bg:"rgba(251,191,36,.1)",  multi:true },
+          { key:"portaLateral", label:"Porta Lateral",   icon:"🚪", color:"#94a3b8", bg:"rgba(148,163,184,.1)", multi:true },
+        ];
+
+        const DF = {
+          excluido:false, domingoOnly:false, portaLateralOnly:false, pulpitoOnly:false,
+          semPulpito:false, recepcaoOnly:false, visitantesOnly:false, frenteOnly:false,
+          isCoord:false, isVisitantesF:false, isTercaQuinta:false, isDomingo1x:false,
+          pairWith:"", segueVisitantesF:"", maxCultos:0,
+        };
+        const EMPTY_FORM = { ...DF, name:"", cargo:"CP", nasc:"", tel:"", sexo:"M" };
+
+        const INITIAL_OBREIROS = [
+          {id:1,  name:"Antonio Loures Pinheiro",              cargo:"CP",nasc:"20/09/1960",tel:"(69) 99248-1366",sexo:"M",semPulpito:true,    ...DF},
+          {id:2,  name:"Cleiton Santos Pereira",               cargo:"CP",nasc:"12/05/1990",tel:"(69) 99925-9592",sexo:"M",domingoOnly:true,segueVisitantesF:"Hevelyn Marques Ribeiro Pereira",...DF},
+          {id:3,  name:"Gean Carlos dos Santos",               cargo:"CP",nasc:"11/03/1995",tel:"(69) 99200-2522",sexo:"M",...DF},
+          {id:4,  name:"Gustavo Henrique Silva Dias",          cargo:"CP",nasc:"22/11/2006",tel:"(69) 99929-4049",sexo:"M",domingoOnly:true,  ...DF},
+          {id:5,  name:"Kayk Gustavo Fernandes Dias",          cargo:"CP",nasc:"12/02/2006",tel:"(69) 99268-0520",sexo:"M",...DF},
+          {id:6,  name:"Lucas Bianchi do Carmo",               cargo:"CP",nasc:"14/10/2009",tel:"(69) 99252-8601",sexo:"M",...DF},
+          {id:7,  name:"Lucas Gabriel Nascimento Lazaro",      cargo:"CP",nasc:"25/02/1998",tel:"(69) 99261-9263",sexo:"M",...DF},
+          {id:8,  name:"Marcos Antônio da Silva Almeida",      cargo:"CP",nasc:"15/06/1989",tel:"(69) 99319-8935",sexo:"M",...DF},
+          {id:9,  name:"Miguel Maciel Da Silva Costa",         cargo:"CP",nasc:"03/04/1982",tel:"(69) 98400-6063",sexo:"M",...DF},
+          {id:10, name:"Odair José Dos Santos",                cargo:"CP",nasc:"17/12/1982",tel:"(69) 99299-8114",sexo:"M",...DF},
+          {id:11, name:"Paulo Vinícius Costa Nogueira",        cargo:"CP",nasc:"19/09/1997",tel:"(69) 99296-7486",sexo:"M",...DF},
+          {id:13, name:"Sales Vitor Carvalho Lopes",           cargo:"CP",nasc:"06/04/2000",tel:"(69) 99242-8560",sexo:"M",...DF},
+          {id:14, name:"Wender Ferreira da Silva",             cargo:"CP",nasc:"04/11/1964",tel:"(69) 99604-3172",sexo:"M",...DF},
+          {id:15, name:"Cláudio Martins Dos Reis",             cargo:"DC",nasc:"21/11/1972",tel:"(69) 99212-4978",sexo:"M",...DF},
+          {id:16, name:"David de Lima Silva",                  cargo:"DC",nasc:"26/06/2002",tel:"(69) 99331-1106",sexo:"M",pairWith:"Regina Valêncio Zulcon",...DF},
+          {id:17, name:"Eisen Guimarães da Fonseca",           cargo:"DC",nasc:"25/09/2000",tel:"(69) 99267-2897",sexo:"M",...DF},
+          {id:18, name:"James Brendo Pessoa Ferreira",         cargo:"DC",nasc:"16/09/2000",tel:"(69) 99382-0925",sexo:"M",...DF},
+          {id:19, name:"Jhony Rondon",                         cargo:"DC",nasc:"09/09/1993",tel:"(69) 99207-5646",sexo:"M",portaLateralOnly:true,...DF},
+          {id:20, name:"João Batista Carvalho Filho",          cargo:"DC",nasc:"06/01/1961",tel:"(69) 99300-2855",sexo:"M",portaLateralOnly:true,...DF},
+          {id:21, name:"Juliano Pinho Dias",                   cargo:"DC",nasc:"24/10/1985",tel:"(69) 99350-1384",sexo:"M",pairWith:"Creisilaene Barbosa da Silva",...DF},
+          {id:22, name:"Mauro Celso Malagolini",               cargo:"DC",nasc:"01/12/1978",tel:"(69) 99247-4940",sexo:"M",isCoord:true,pulpitoOnly:true,...DF},
+          {id:23, name:"Wesley Candido Almeida",               cargo:"DC",nasc:"24/11/1993",tel:"(69) 99375-1308",sexo:"M",...DF},
+          {id:24, name:"Marlon Eduardo Dias Alves",            cargo:"EV",nasc:"12/04/1991",tel:"(69) 99228-5590",sexo:"M",isCoord:true,      ...DF},
+          {id:25, name:"Franklim Costa Da Silva",              cargo:"PB",nasc:"19/05/1996",tel:"(69) 99357-5218",sexo:"M",isCoord:true,      ...DF},
+          {id:26, name:"Hevelyn Marques Ribeiro Pereira",      cargo:"CP",nasc:"20/10/1994",tel:"(69) 99265-1225",sexo:"F",isVisitantesF:true,...DF},
+          {id:27, name:"Izabelle Alencar de Morais",           cargo:"CP",nasc:"20/05/2008",tel:"(69) 99287-1938",sexo:"F",...DF},
+          {id:28, name:"Pryscilla Leidiany Oliveira Randofo",  cargo:"CP",nasc:"03/06/1993",tel:"(69) 99341-5768",sexo:"F",...DF},
+          {id:29, name:"Raira Fernanda Nogueira Macedo da Fonseca",cargo:"CP",nasc:"02/04/2001",tel:"(69) 99255-9597",sexo:"F",isDomingo1x:true,...DF},
+          {id:30, name:"Roberta Aparecida De Souza Maciel",    cargo:"CP",nasc:"22/05/1986",tel:"(69) 98471-6705",sexo:"F",isVisitantesF:true,...DF},
+          {id:31, name:"Wyne Abreu Ventura",                   cargo:"CP",nasc:"04/07/1998",tel:"(69) 97391-6596",sexo:"F",isTercaQuinta:true,...DF},
+          {id:32, name:"Yasminn Ferreira Alves",               cargo:"CP",nasc:"23/08/2004",tel:"(69) 98415-4427",sexo:"F",...DF},
+          {id:33, name:"Ana Geraldo Neves Carvalho",           cargo:"DC",nasc:"17/11/1973",tel:"(69) 99300-2855",sexo:"F",...DF},
+          {id:34, name:"Ana Graciely de Melo Reis Rocha",      cargo:"DC",nasc:"27/06/1995",tel:"(69) 99345-1301",sexo:"F",...DF},
+          {id:35, name:"Ana Rita Linhares Dias",               cargo:"DC",nasc:"01/07/1971",tel:"(69) 99257-3803",sexo:"F",...DF},
+          {id:36, name:"Angélica Dalcin de Oliveira Martins",  cargo:"DC",nasc:"25/09/1985",tel:"(69) 99280-7378",sexo:"F",isVisitantesF:true,...DF},
+          {id:37, name:"Aparecida Alves Da Rocha Pereira",     cargo:"DC",nasc:"21/12/1964",tel:"(69) 99354-9029",sexo:"F",...DF},
+          {id:38, name:"Bianca França da Silva Miranda",       cargo:"DC",nasc:"10/11/1997",tel:"(69) 99338-4683",sexo:"F",...DF},
+          {id:39, name:"Creisilaene Barbosa da Silva",         cargo:"DC",nasc:"14/02/1984",tel:"(69) 99362-1359",sexo:"F",pairWith:"Juliano Pinho Dias",...DF},
+          {id:40, name:"Crislane Rondon",                      cargo:"DC",nasc:"27/02/1995",tel:"(69) 99390-0553",sexo:"F",isTercaQuinta:true,...DF},
+          {id:41, name:"Elisangela Lima Pimentel",             cargo:"DC",nasc:"20/06/1982",tel:"(69) 99360-2361",sexo:"F",...DF},
+          {id:42, name:"Eronilde Maria Da Silva Oliveira",     cargo:"DC",nasc:"19/07/1969",tel:"(69) 99272-2488",sexo:"F",isDomingo1x:true,  ...DF},
+          {id:43, name:"Francelina Carvalho de Lima",          cargo:"DC",nasc:"17/12/1971",tel:"(69) 99306-9276",sexo:"F",...DF},
+          {id:44, name:"Francisca Araújo Guerra do Carmo",     cargo:"DC",nasc:"07/06/1983",tel:"(69) 98454-8275",sexo:"F",...DF},
+          {id:46, name:"Luana Patrícia De Lima Silva",         cargo:"DC",nasc:"20/06/1996",tel:"(69) 99386-4072",sexo:"F",...DF},
+          {id:47, name:"Luciana dos Santos Lima de Oliveira",  cargo:"DC",nasc:"19/08/1984",tel:"(69) 99291-4591",sexo:"F",...DF},
+          {id:48, name:"Maria Cleide Neves",                   cargo:"DC",nasc:"22/10/1979",tel:"(69) 99924-6521",sexo:"F",...DF},
+          {id:49, name:"Marley Jesus Ferreira",                cargo:"DC",nasc:"15/11/1965",tel:"(69) 99374-4583",sexo:"F",...DF},
+          {id:50, name:"Marta Ramos Cabral Dos Reis",          cargo:"DC",nasc:"12/10/1975",tel:"(69) 99268-9078",sexo:"F",...DF},
+          {id:52, name:"Regina Valêncio Zulcon",               cargo:"DC",nasc:"22/11/2002",tel:"(69) 99213-3290",sexo:"F",isDomingo1x:true,  ...DF},
+          {id:53, name:"Risovane Braga",                       cargo:"DC",nasc:"13/02/1961",tel:"(69) 99922-5357",sexo:"F",isDomingo1x:true,  ...DF},
+          {id:54, name:"Rosimar Alves Ferreira",               cargo:"DC",nasc:"02/05/1982",tel:"(69) 99277-2455",sexo:"F",...DF},
+          {id:55, name:"Solange Emenegilda de Oliveira",       cargo:"DC",nasc:"05/07/1967",tel:"(69) 99251-2785",sexo:"F",...DF},
+          {id:56, name:"Suamy Santana De Jesus",               cargo:"DC",nasc:"18/05/1993",tel:"(69) 99269-0471",sexo:"F",isDomingo1x:true,  ...DF},
+          {id:57, name:"Teresa Teodora Do Nascimento Dos Santos",cargo:"DC",nasc:"08/11/1965",tel:"(69) 99974-2979",sexo:"F",...DF},
+        ];
+
+        // Lógica de ajuda e funções utilitárias
+        const maskDate = (v = "") => {
+          const d = v.replace(/\D/g, "").slice(0, 8);
+          if (d.length <= 2) return d;
+          if (d.length <= 4) return `${d.slice(0,2)}/${d.slice(2)}`;
+          return `${d.slice(0,2)}/${d.slice(2,4)}/${d.slice(4)}`;
+        };
+        const maskPhone = (v = "") => {
+          const d = v.replace(/\D/g, "").slice(0, 11);
+          if (d.length <= 2) return d.length ? `(${d}` : "";
+          if (d.length <= 7) return `(${d.slice(0,2)}) ${d.slice(2)}`;
+          return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+        };
+        const isValidDate = (s = "") => {
+          if (!s || s.length < 10) return false;
+          const [dd, mm, yyyy] = s.split("/").map(Number);
+          const date = new Date(yyyy, mm - 1, dd);
+          return date.getFullYear() === yyyy && date.getMonth() === mm - 1 && date.getDate() === dd;
+        };
+        const isValidPhone = (s = "") => s === "" || /^\(\d{2}\) \d{4,5}-\d{4}$/.test(s);
+        const ST = {
+          get: (k) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } },
+          set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+          remove: (k) => { try { localStorage.removeItem(k); } catch {} },
+        };
+
+        // Gerador de Cultos e Escala
+        function gerarCultos(mes, ano, dias, labels = {}) {
+          const dim = new Date(ano, mes, 0).getDate();
+          const out = [];
+          for (let d = 1; d <= dim; d++) {
+            const dow = new Date(ano, mes - 1, d).getDay();
+            const dia = DW.find(x => x.dow === dow);
+            if (dia && dias.includes(dia.key)) {
+              const ds = `${String(d).padStart(2,"0")}/${String(mes).padStart(2,"0")}/${ano}`;
+              out.push({ id: out.length, date: ds, weekday: dia.short, type: dia.type, label: labels[ds] || "" });
+            }
+          }
+          return out;
+        }
+
+        function buildSchedule(OBS, cultos, base = {}, overrides = {}, maxPerPerson = 0) {
+          const warnings = [];
+          const COORD  = OBS.filter(o => o.isCoord && !o.excluido).map(o => o.name);
+          const VISITF = OBS.filter(o => o.isVisitantesF && !o.excluido).map(o => o.name);
+          const WTQ    = OBS.filter(o => o.isTercaQuinta && !o.excluido && o.sexo === "F").map(o => o.name);
+          const W1X    = OBS.filter(o => o.isDomingo1x && !o.excluido && o.sexo === "F").map(o => o.name);
+          const PORTA  = OBS.filter(o => o.portaLateralOnly && !o.excluido).map(o => o.name);
+          const ob = (n) => OBS.find(o => o.name === n) || {};
+          const specM = (o) => o.isCoord || o.portaLateralOnly || o.recepcaoOnly || o.visitantesOnly || o.frenteOnly || o.isDomingo1x;
+          const specF = (o) => o.isVisitantesF || o.isTercaQuinta || o.isDomingo1x || o.portaLateralOnly || o.visitantesOnly || o.frenteOnly;
+          const MG  = OBS.filter(o => o.sexo === "M" && !o.excluido && !specM(o) && !o.pulpitoOnly).map(o => o.name);
+          const MP  = OBS.filter(o => o.sexo === "M" && !o.excluido && !o.portaLateralOnly && !o.semPulpito && !o.recepcaoOnly && !o.visitantesOnly && !o.frenteOnly && (!o.isCoord || o.pulpitoOnly)).map(o => o.name);
+          const DCP = MP.filter(n => ob(n).cargo === "DC");
+          const WG  = OBS.filter(o => o.sexo === "F" && !o.excluido && !specF(o) && !o.recepcaoOnly).map(o => o.name);
+          const cnt = {};
+          const monthCount = {};
+          OBS.forEach(o => { cnt[o.name] = base[o.name] || 0; monthCount[o.name] = 0; });
+          const pick = (pool, used, type = null) => {
+            let av = pool.filter(p => !used.includes(p));
+            if (type && type !== "domingo") av = av.filter(p => !ob(p).domingoOnly);
+            if (maxPerPerson > 0) av = av.filter(p => monthCount[p] < maxPerPerson);
+            if (!av.length) return null;
+            av.sort((a, b) => cnt[a] - cnt[b]);
+            const p = av[0];
+            cnt[p]++; monthCount[p]++;
+            return p;
+          };
+          const suns = cultos.filter(c => c.type === "domingo");
+          const d1x = {};
+          W1X.forEach((n, i) => { if (i < suns.length) d1x[suns[i].id] = n; });
+          const result = cultos.map(culto => {
+            const ov = overrides[culto.date] || {};
+            const used = [];
+            const add = (...ns) => ns.flat().filter(Boolean).forEach(n => { if (!used.includes(n)) used.push(n); });
+            const s = {};
+            const applySlot = (key, autoFn) => {
+              if (key in ov) {
+                s[key] = ov[key];
+                (Array.isArray(ov[key]) ? ov[key] : [ov[key]]).forEach(add);
+              } else autoFn();
+            };
+            applySlot("coordenacao", () => { const p = COORD[culto.id % COORD.length]; s.coordenacao = p; add(p); });
+            applySlot("visitantesF", () => { const p = VISITF[culto.id % VISITF.length]; s.visitantesF = p; add(p); });
+            applySlot("portaLateral", () => { s.portaLateral = PORTA; add(...PORTA); });
+            applySlot("pulpito", () => {
+              const p = []; const dc = pick(DCP, used, culto.type); if(dc) p.push(dc);
+              while(p.length < 3) { const n = pick(MP, used, culto.type); if(!n) break; p.push(n); }
+              s.pulpito = p; add(...p);
+            });
+            applySlot("recepcao", () => {
+              const r = []; const d1 = d1x[culto.id]; if(d1 && !used.includes(d1)) r.push(d1);
+              while(r.length < 2) { const n = pick(WG, used); if(!n) break; r.push(n); }
+              s.recepcao = r; add(...r);
+            });
+            applySlot("banheiroM", () => { const p = pick(MG, used, culto.type); s.banheiroM = p; add(p); });
+            applySlot("banheiroF", () => { const p = pick(WG, used); s.banheiroF = p; add(p); });
+            return { culto, slots: s };
+          });
+          return { schedule: result, newContagem: cnt, warnings };
+        }
+
+        // Componentes da Interface
+        function PersonTag({ name, obreiros, color, onClick, dimmed }) {
+          const o = obreiros.find(x => x.name === name) || {};
+          const cc = CARGO_COLOR[o.cargo || "CP"] || color;
+          return (
+            <span onClick={onClick} style={{ background: CARGO_BG[o.cargo] || "rgba(255,255,255,.05)", color: cc, border: `1px solid ${cc}33`, borderRadius: 8, padding: "5px 10px", fontSize: 12, fontWeight: 600, cursor: onClick ? "pointer" : "default", display: "inline-flex", alignItems: "center", gap: 6 }}>
+              {name.split(" ").slice(0, 2).join(" ")}
+            </span>
+          );
+        }
+
+        // FUNÇÃO PRINCIPAL DO APP
+        function App() {
+          const [obreiros, setObreiros] = useState(INITIAL_OBREIROS);
+          const [mes, setMes] = useState(new Date().getMonth() + 1);
+          const [ano, setAno] = useState(2026);
+          const [diasSemana, setDias] = useState(["dom","ter","qui","sab"]);
+          const [labels, setLabels] = useState({});
+          const [overrides, setOverrides] = useState({});
+          const [selIdx, setSelIdx] = useState(0);
+
+          const cultos = useMemo(() => gerarCultos(mes, ano, diasSemana, labels), [mes, ano, diasSemana, labels]);
+          const { schedule } = useMemo(() => buildSchedule(obreiros, cultos, {}, overrides, 0), [obreiros, cultos, overrides]);
+
+          const sel = schedule[selIdx];
+
+          return (
+            <div style={{ color: "#f1f5f9", padding: 20, maxWidth: 800, margin: "0 auto" }}>
+              <style>{FONT_STYLE}</style>
+              <h1 style={{ textAlign: "center", color: "var(--gold2)" }}>⛪ Escala dos Obreiros Sede</h1>
+              
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(70px, 1fr))", gap: 10, marginBottom: 30 }}>
+                {schedule.map((e, i) => (
+                  <button key={i} onClick={() => setSelIdx(i)} style={{ background: selIdx === i ? "var(--indigo)" : "var(--navy2)", color: "#fff", border: "1px solid var(--border)", borderRadius: 10, padding: 10, cursor: "pointer" }}>
+                    <strong>{e.culto.weekday}</strong><br/>{e.culto.date.slice(0,5)}
+                  </button>
+                ))}
+              </div>
+
+              {sel && (
+                <div style={{ background: "var(--navy2)", borderRadius: 20, padding: 30, border: "1px solid var(--border)" }}>
+                  <h2>{sel.culto.weekday}, {sel.culto.date}</h2>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
+                    {FM.map(m => {
+                      const names = (Array.isArray(sel.slots[m.key]) ? sel.slots[m.key] : [sel.slots[m.key]]).filter(Boolean);
+                      return (
+                        <div key={m.key} style={{ background: "rgba(255,255,255,.03)", padding: 15, borderRadius: 12 }}>
+                          <div style={{ color: m.color, fontWeight: 800, marginBottom: 8 }}>{m.icon} {m.label}</div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                            {names.map(n => <PersonTag key={n} name={n} obreiros={obreiros} color={m.color} />)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escala dos Obreiros - Sede</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-</head>
-<body style="margin: 0; padding: 0; background: #0f1117;">
-    <div id="root"></div>
-    <script type="text/babel">
-        // Importando as ferramentas do React
-        const { useState, useMemo, useEffect, useCallback, useRef, Component } = React;
-
-        // --- INÍCIO DO SEU CÓDIGO (App.jsx) ---
-        function App() {
-            /* Coloquei todo o seu código aqui dentro para facilitar */
-            /* Incluindo as constantes (CARGO_COLOR, DW, FM, INITIAL_OBREIROS, etc.) */
-            
-            // [CÓDIGO DO APP.JSX ADAPTADO]
-            // (As instruções de estilo e lógica de escala que você enviou estão aqui)
-            
-            // ... (Abaixo segue a lógica completa que você forneceu)

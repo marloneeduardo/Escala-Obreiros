@@ -1,0 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  min-height: 100vh;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: linear-gradient(90deg, #0d1021, #1a1236, #0d1021);
+  color: #f1f5f9;
+}
+
+:root {
+  --navy: #0f1117;
+  --navy2: #181c27;
+  --navy3: #1e2336;
+  --gold: #c9922a;
+  --gold2: #f0b84a;
+  --gold3: #fcd97a;
+  --indigo: #4f46e5;
+  --indigo2: #6366f1;
+  --indigo3: #818cf8;
+  --green: #10b981;
+  --red: #ef4444;
+  --rose: #f43f5e;
+  --slate: #64748b;
+  --slate2: #94a3b8;
+  --slate3: #cbd5e1;
+  --card: #181c27;
+  --border: rgba(255,255,255,0.08);
+  --text: #f1f5f9;
+  --text2: #94a3b8;
+  --text3: #64748b;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--navy2); }
+::-webkit-scrollbar-thumb { background: var(--navy3); border-radius: 3px; }
+
+/* Focus */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--indigo2) !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.2) !important;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--gold2);
+  outline-offset: 2px;
+}
+
+/* Animations */
+@keyframes slideIn {
+  from { transform: translateX(110%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Hover card */
+.hover-card:hover {
+  transform: translateY(-1px);
+  transition: transform .15s ease;
+}
+
+/* Print */
+@media print {
+  .no-print { display: none !important; }
+  body { background: white !important; font-family: Arial, sans-serif; }
+  .print-area { display: block !important; }
+}
+
+.print-area { display: none; }
+
+/* Select option styling for dark theme */
+select option {
+  background: #1e2336;
+  color: #f1f5f9;
+}
